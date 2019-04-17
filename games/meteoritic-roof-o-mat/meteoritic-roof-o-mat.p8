@@ -5,6 +5,9 @@ __lua__
 -- by @adam_sporka
 -- 2016
 
+-- 1.3
+-- ARU can't be installed unless there is none on the roof or there is one with less than three hits to live
+
 -- 1.2
 -- theme music plays in-game
 -- limiting simultaneous meteorites above each building to three
@@ -202,10 +205,14 @@ end
 
 function bldg_install_aru(b)
  if is_rig_aligned(b) then
-  w.bldgs[b].aru=aru_max_health
-  w.bldgs[b].health=100
-  sfx(5,3)
+  if w.bldgs[b].aru<3 then
+   w.bldgs[b].aru=aru_max_health
+   w.bldgs[b].health=100
+   sfx(5,3)
+   return true
+  end
  end
+ return false
 end
 
 function bldg_health_from_rig(b)
@@ -511,8 +518,9 @@ function update_rig()
   elseif is_pressed(5) then
    if w.arus>0 then
     b=w.x_to_bldg[flr(d.x/8)]
-    bldg_install_aru(b)
-    w.arus-=1
+    if bldg_install_aru(b) then
+     w.arus-=1
+    end
    end
   end
  end
