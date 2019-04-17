@@ -1,17 +1,13 @@
 pico-8 cartridge // http://www.pico-8.com
 version 8
 __lua__
-e=0::_::cls()
-for a=0,1,.01 do
+e=0::_::cls()for a=0,1,.01 do
 x=64 y=0 c=x d=0
 for i=1,16 do
-c=x+sin(a*i+e)*8
-d=y+8
-line(x,y,c,d,a*16)
-x=c
-y=d
-end
-end
+c=x+sin(a*i+e)*8 d=y+8
+line(x,y,c,d,a*16+8)
+x=c y=d
+end end
 e+=.01
 flip()goto _
 __gfx__
