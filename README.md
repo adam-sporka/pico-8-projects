@@ -17,3 +17,7 @@ Other contents:
 
 Some of my PICO-8 cartridges are available on my Lexaloffle profile at:
 https://www.lexaloffle.com/bbs/?uid=12594
+
+You're more than welcome to use anything you find here, however:
+ * You're using the code at your own risk
+ * Please credit me as "Adam Sporka" or link/list my twitter account @adam_sporka
