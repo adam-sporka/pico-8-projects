@@ -1,16 +1,38 @@
 pico-8 cartridge // http://www.pico-8.com
 version 8
 __lua__
+-- planetary defense remake
+-- by adamj [work in progress]
+
 id_plyr=16
 id_shot=17
 id_rchg=18
 id_tgt=32
+id_msl=33
+id_shot=17
+
+planet_radius=24
+base_orbit=32
+max_missiles=8
 
 ////////////////////////////////
 // draw
 
+function center(str,y,color)
+	print(str,64-(2*#str),y,color)
+end
+
 function draw_planet_init()
-	circfill(64,64,32,2)
+	cls()
+	circfill(64,64,planet_radius,2)
+	colors={2,8,14,8}
+	for x=0,127,1 do
+		for y=0,127 do
+			if pget(x,y)>0 then
+				pset(x,y,colors[(flr(y/2))%4+1])
+			end
+		end
+	end
 -- 0x6000: screen
 -- 0x2000: map
 	memcpy(0x1000,0x6000,8192)
@@ -34,7 +56,7 @@ end
 function draw_msls()
 	for s in all(msls) do
 		if s.exploded==0 then
-			spr(33,s.x-3,s.y-3)
+			spr(id_msl,s.x-3,s.y-3)
 		else
 			circfill(s.x,s.y,s.exploded,6)
 		end
@@ -46,9 +68,30 @@ function draw_shots()
 		if s.exploded>0 then
 			circ(s.x,s.y,s.exploded,6)
 		else
-			spr(17,s.x-1,s.y-1)
+			spr(id_shot,s.x-1,s.y-1)
 		end
 	end
+end
+
+function draw_texts()
+	print("score "..score, 0, 0, 6)
+	if game_state==2 then
+		center("game over", 46, 7)
+		center("press X to start",106,6);
+	end
+	rect(64,0,127,4,6)
+	d=61*player.energy/100
+	if (d>=1) then
+		rectfill(65,1,65+d,3,3)
+	end
+end
+
+function draw_title()
+	center("planetary defense for pico-8",16,7)
+	center("by @adam_sporka",24,6)
+	center("based on 1984 original by",100,3)
+	center("charles bachand and tom hudson",108,3);
+	center("press x to start",116,6);
 end
 
 ////////////////////////////////
@@ -79,11 +122,13 @@ function setup_movement(obj,x,y,tx,ty,spd)
 end
 
 function fire_shot()
+	if (player.energy<=0) return;
 	shot={}
 	shot.exploded=0
 	setup_movement(shot,player.x,player.y,tgt.x,tgt.y,1)
 	shot.x+=shot.vx*2
 	shot.y+=shot.vy*2
+	player.energy-=1
 	add(shts,shot)
 	sfx(4,-1)
 end
@@ -106,24 +151,45 @@ end
 ////////////////////////////////
 // update
 
+function chk_explsn_near_ctr(x,y)
+	if (abs(64-x)<6 and abs(64-y)<6) then
+		game_state=2
+		return true
+	else
+		return false
+	end
+end
+
+function add_score(increase)
+	if game_state==1 then
+		score+=increase
+	end
+end
+
 interval=5
 function update_msls()
 	memcpy(0x6000,0x1000,8192)
 	-- fire a missile
-	if time()-last_msl > interval then
+	if #msls<max_missiles and game_state==1 and time()-last_msl>interval then
 		fire_msl()
 		last_msl=time()
 		interval-=.1
 		if (interval<1) interval=1
 	end
 	for s in all(msls) do
+		-- planetary impact
 		if s.exploded==0 then
 			s.x+=s.vx
 			s.y+=s.vy
 			if pget(s.x,s.y)>0 then
+				add_score(-1)
 				sfx(1)
-			 s.exploded=1
-			 circfill(s.x,s.y,6,0)
+				s.exploded=1
+				chk_explsn_near_ctr(s.x,s.y)
+				circfill(s.x,s.y,6,0)
+			end
+			if distance(s.x,s.y,64,64)<=1 then
+				game_state=2
 			end
 		elseif s.exploded<10 then
 			s.exploded+=1
@@ -138,32 +204,39 @@ function update_shots()
 	memcpy(0x6000,0x1000,8192)
 	for s in all(shts) do
 		pset(s.x,s.y,0)
+		-- not exploded
 		if s.exploded==0 then
 			s.x+=s.vx
 			s.y+=s.vy
-		else
-			s.exploded+=1
-			if s.exploded==10 then
-				del(shts,s)
-			end
-		end
-		if (s.exploded==0) then
+			-- planet collision
 			if (pget(s.x,s.y)>0) then
-				circfill(s.x,s.y,6,0)
+				circfill(s.x,s.y,4,0)
 				s.exploded=1
 				sfx(5,-1)
+				chk_explsn_near_ctr(s.x,s.y)
 			else
 				for m in all(msls) do	
 					d=distance_obj(m,s)
+					-- msl collision
 					if d<3.5 then
-						s.exploded=1
+						del(shts,s)
 						if m.exploded==0 then
+							add_score(10)
+							sfx(6,-1)
 							m.exploded=1
 						end
 					end
 				end
 			end
+		-- already exploded
+		else
+			s.exploded+=1
+			-- too old
+			if s.exploded==10 then
+				del(shts,s)
+			end
 		end
+		-- cull
 		if s.x<0 or s.x>127 or s.y<0 or s.y>127 then
 			del(shts,s)
 		end
@@ -171,13 +244,7 @@ function update_shots()
 	memcpy(0x1000,0x6000,8192)
 end
 
-function update_player()
-	if btn(5) and btnp(1) then
-		player.omega+=0.0001
-	elseif btn(5) and btnp(0) then
-		player.omega-=0.0001
-	end
-	
+function control_target()
 	if not btn(5) then
 		if (btn(0)) tgt.x-=1
 		if (btn(1)) tgt.x+=1
@@ -188,41 +255,48 @@ function update_player()
 		if (tgt.x>127) tgt.x=127
 		if (tgt.y>127) tgt.y=127
 	end
-	
+end
+
+function control_player()
+	-- fire shots
 	if btnp(4) then
 		fire_shot()
 	end
+	-- increase/decrease orbital speed
+	if btn(5) and btn(2) then
+		player.omega+=0.00025
+		if player.omega>0.01 then
+			player.omega=0.005
+		end
+	elseif btn(5) and btn(3) then
+		player.omega-=0.00025
+		if player.omega<-0.01 then
+			player.omega=-0.005
+		end
+	end
+end
 
-	player.x=64+(player.omega*16+48)*cos(player.angle)
-	player.y=64+(player.omega*16+48)*sin(player.angle)
+function update_player()
+	-- move around
+	player.x=64+(player.omega*16+base_orbit)*cos(player.angle)
+	player.y=64+(player.omega*16+base_orbit)*sin(player.angle)
 	player.angle+=player.omega
 	if player.angle>1 then
 		player.angle-=1
 	end
-
 end
 
 function update_base()
-	base.x=64+(base.omega*16+48)*cos(base.angle)
-	base.y=64+(base.omega*16+48)*sin(base.angle)
+	-- move around
+	base.x=64+(base.omega*16+base_orbit)*cos(base.angle)
+	base.y=64+(base.omega*16+base_orbit)*sin(base.angle)
 	base.angle+=base.omega
 	if base.angle>1 then
 		base.angle-=1
 	end
 end
 
-function update_dock()
-	was_ok=dock.ok
-	was_possible=dock.possible
-	dx=base.x-player.x
-	dy=base.y-player.y
-	dist=sqrt(dx*dx+dy*dy)
-	if dist<10 and dock.ok then
-		dock.possible=true
-	else
-		dock.possible=false
-	end	
-	
+function control_dock()
 	if btn(5) and btnp(2) and dock.possible then
 		dock.engaged=true
 		sfx(2)
@@ -234,12 +308,14 @@ function update_dock()
 	if not dock.possible	and dock.engaged then
 		dock.ok=false
 		dock.engaged=false
-	end
-	
-	if was_ok and not dock.ok then
-		sfx(1)
-	elseif not was_possible and dock.possible then
-		sfx(0)
+	end	
+end
+
+function update_dock()
+	d=distance_obj(base,player)
+	if d<5 then
+		player.energy+=0.1*(5-d)
+		if (player.energy>100) player.energy=100
 	end
 end
 
@@ -249,16 +325,38 @@ end
 function _draw()
 	cls()
 	memcpy(0x6000,0x1000,8192)
-	draw_player()
-	draw_base()
-	draw_dock()
-	draw_shots()
-	draw_msls()
-	print(#shts.." "..#msls,0,123,7)
+	if (game_state==0) then
+		draw_player()
+		draw_base()
+		draw_texts()
+		draw_title()
+	else
+		draw_player()
+		draw_base()
+		draw_dock()
+		draw_shots()
+		draw_msls()
+		draw_texts()
+	end
 end
 
 function _update()
 	cls()
+	if (game_state==0) then
+		if (btnp(5)) then
+			game_init()
+			game_state=1
+		end
+	elseif (game_state==1) then
+		control_target()
+		control_player()
+		control_dock()
+	elseif (game_state==2) then
+		if (btnp(5)) then
+			game_init()
+			game_state=1
+		end
+	end
 	update_shots()
 	update_msls()
 	update_player()
@@ -266,12 +364,13 @@ function _update()
 	update_dock()
 end
 
-function _init()
+function game_init()
 	cls()
 	draw_planet_init()
 	player={}
 	player.angle=0
-	player.omega=0.002
+	player.omega=0.0025
+	player.energy=100
 	tgt={}
 	tgt.x=64
 	tgt.y=64
@@ -280,10 +379,16 @@ function _init()
 	dock.ok=true
 	base={}
 	base.angle=0
-	base.omega=0.001
+	base.omega=0.0003
 	msls={}
 	shts={}
 	last_msl=time()
+	game_state=0
+	score=0
+end
+
+function _init()
+	game_init()
 end
 __gfx__
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
@@ -457,7 +562,7 @@ __sfx__
 000300002102021030000001a0201a030000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 0004000026020210201d02018020130200d0200902000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 000200000163001620026100261002610026100161001610016100161001610016100161001610016100000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+000500003102033020310202e020270201f01019010130100e0100a01004010030100001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
