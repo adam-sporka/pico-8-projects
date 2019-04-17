@@ -7,6 +7,7 @@ __lua__
 max_speed=15
 viscosity=0.1
 weakening=0.6
+score=0
 
 objects={}
 function new_object(x,y,vx,vy,e)
@@ -44,6 +45,7 @@ function animate_object(obj)
  elseif obj.state==1 then
   if obj.phase==3 then
    sfx(ch,ch)
+   score+=1
    ch+=1
    ch=ch%4
   end
@@ -74,6 +76,7 @@ end
 function _update()
  if btnp(4) then
   objects={}
+  score=0
   _init()
  end
  activity=false
@@ -88,8 +91,9 @@ function _draw()
  for a=1,#objects do
   draw_object(objects[a])
  end
+ print(score,0,120,6)
  if not activity then
-  print("press 'z' to go again",22,120,5)
+  print("press 'z' to go again",44,120,6)
  end
 end
 
