@@ -6,11 +6,13 @@ id_shot=17
 id_rchg=18
 id_tgt=32
 
--- 0x6000: screen
--- 0x2000: map
+////////////////////////////////
+// draw
 
 function draw_planet_init()
 	circfill(64,64,32,2)
+-- 0x6000: screen
+-- 0x2000: map
 	memcpy(0x1000,0x6000,8192)
 end
 
@@ -29,50 +31,85 @@ function draw_dock()
 	end
 end
 
-function shoot()
+function draw_msls()
+	for s in all(msls) do
+		if s.exploded==0 then
+			spr(33,s.x-3,s.y-3)
+		else
+			circfill(s.x,s.y,s.exploded,6)
+		end
+	end
+end
+
+function draw_shots()
+	for s in all(shts) do
+		if s.exploded>0 then
+			circ(s.x,s.y,s.exploded,6)
+		else
+			spr(17,s.x-1,s.y-1)
+		end
+	end
+end
+
+////////////////////////////////
+// spawn
+
+function distance(x1,y1,x2,y2)
+	dx,dy=x1-x2,y1-y2
+	d=sqrt(dx*dx+dy*dy)
+	return d
+end
+
+function distance_obj(o1,o2)
+	return distance(o1.x,o1.y,o2.x,o2.y)
+end
+
+function setup_movement(obj,x,y,tx,ty,spd)
+	obj.x=x
+	obj.y=y
+	obj.vx=tx-x
+	obj.vy=ty-y
+	r=sqrt(obj.vx*obj.vx+obj.vy*obj.vy)
+	if r==0 then
+		obj.vx,obj.vy=0,0
+	else
+		obj.vx/=(r/spd)
+		obj.vy/=(r/spd)
+	end
+end
+
+function fire_shot()
 	shot={}
-	shot.x=player.x
-	shot.y=player.y
-	shot.vx=tgt.x-player.x
-	shot.vy=tgt.y-player.y
-	r=sqrt(shot.vx*shot.vx+shot.vy*shot.vy)
-	shot.vx/=r
-	shot.vy/=r	
+	shot.exploded=0
+	setup_movement(shot,player.x,player.y,tgt.x,tgt.y,1)
 	shot.x+=shot.vx*2
 	shot.y+=shot.vy*2
-	shot.exploded=0
 	add(shts,shot)
 	sfx(4,-1)
 end
 
 function fire_msl()
 	msl={}
-	
+	msl.exploded=0
 	p1=flr(rnd(2))%2
 	p2=flr(rnd(2))%2
 	p3=rnd(128)
 	if p1==0 then
-		x=p3
-		y=p2*127
+		x,y=p3,p2*127
 	else
-		x=p2*127
-		y=p3
+		x,y=p2*127,p3
 	end
-	
-	msl.x=x
-	msl.y=y
-	msl.exploded=0
-	msl.vx=64-msl.x
-	msl.vy=64-msl.y
-	r=sqrt(msl.vx*msl.vx+msl.vy*msl.vy)
-	msl.vx/=r*20
-	msl.vy/=r*20
+	setup_movement(msl,x,y,64,64,0.05)
 	add(msls,msl)
 end
+
+////////////////////////////////
+// update
 
 interval=5
 function update_msls()
 	memcpy(0x6000,0x1000,8192)
+	-- fire a missile
 	if time()-last_msl > interval then
 		fire_msl()
 		last_msl=time()
@@ -97,23 +134,13 @@ function update_msls()
 	memcpy(0x1000,0x6000,8192)
 end
 
-function draw_msls()
-	for s in all(msls) do
-		if s.exploded==0 then
-			spr(33,s.x-3,s.y-3)
-		else
-			circfill(s.x,s.y,s.exploded,6)
-		end
-	end
-end
-
 function update_shots()
 	memcpy(0x6000,0x1000,8192)
 	for s in all(shts) do
 		pset(s.x,s.y,0)
 		if s.exploded==0 then
-		 s.x+=s.vx
-		 s.y+=s.vy
+			s.x+=s.vx
+			s.y+=s.vy
 		else
 			s.exploded+=1
 			if s.exploded==10 then
@@ -121,15 +148,13 @@ function update_shots()
 			end
 		end
 		if (s.exploded==0) then
-		 if (pget(s.x,s.y)>0) then
-		 	circfill(s.x,s.y,6,0)
-		 	s.exploded=1
-		 	sfx(5,-1)
-		 else
+			if (pget(s.x,s.y)>0) then
+				circfill(s.x,s.y,6,0)
+				s.exploded=1
+				sfx(5,-1)
+			else
 				for m in all(msls) do	
-					dx=m.x-s.x
-					dy=m.y-s.y
-					d=sqrt(dx*dx+dy*dy)
+					d=distance_obj(m,s)
 					if d<3.5 then
 						s.exploded=1
 						if m.exploded==0 then
@@ -137,7 +162,7 @@ function update_shots()
 						end
 					end
 				end
-		 end
+			end
 		end
 		if s.x<0 or s.x>127 or s.y<0 or s.y>127 then
 			del(shts,s)
@@ -146,27 +171,11 @@ function update_shots()
 	memcpy(0x1000,0x6000,8192)
 end
 
-function draw_shots()
-	for s in all(shts) do
-		if s.exploded>0 then
-			circ(s.x,s.y,s.exploded,6)
-		else
-			spr(17,s.x-1,s.y-1)
-		end
-	end
-end
-
 function update_player()
 	if btn(5) and btnp(1) then
 		player.omega+=0.0001
 	elseif btn(5) and btnp(0) then
-	 player.omega-=0.0001
-	end
-	player.x=64+(player.omega*16+48)*cos(player.angle)
-	player.y=64+(player.omega*16+48)*sin(player.angle)
-	player.angle+=player.omega
-	if player.angle>1 then
-		player.angle-=1
+		player.omega-=0.0001
 	end
 	
 	if not btn(5) then
@@ -181,8 +190,16 @@ function update_player()
 	end
 	
 	if btnp(4) then
-		shoot()
+		fire_shot()
 	end
+
+	player.x=64+(player.omega*16+48)*cos(player.angle)
+	player.y=64+(player.omega*16+48)*sin(player.angle)
+	player.angle+=player.omega
+	if player.angle>1 then
+		player.angle-=1
+	end
+
 end
 
 function update_base()
@@ -205,6 +222,7 @@ function update_dock()
 	else
 		dock.possible=false
 	end	
+	
 	if btn(5) and btnp(2) and dock.possible then
 		dock.engaged=true
 		sfx(2)
@@ -225,15 +243,18 @@ function update_dock()
 	end
 end
 
+////////////////////////////////
+// high level
+
 function _draw()
 	cls()
 	memcpy(0x6000,0x1000,8192)
 	draw_player()
 	draw_base()
 	draw_dock()
- draw_shots()
- draw_msls()
- print(#shts.." "..#msls,0,123,7)
+	draw_shots()
+	draw_msls()
+	print(#shts.." "..#msls,0,123,7)
 end
 
 function _update()
