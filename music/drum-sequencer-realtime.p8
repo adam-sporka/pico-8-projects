@@ -1,6 +1,8 @@
 pico-8 cartridge // http://www.pico-8.com
 version 8
 __lua__
+-- 2-bar rhythm micro-machine
+-- by @adam_sporka
 function _init()
 	ptn_disp={}
 	for a=0,31 do
@@ -9,7 +11,7 @@ function _init()
 	music(0)
 end
 
-function write_note(ptn,row,nte,tbr,vol,fx)
+function set_note(ptn,row,nte,tbr,vol,fx)
 	b0=nte%64+(shl(tbr%4,6))
 	b1=shr(tbr,2)+shl(vol,1)+shl(fx,4)
 	a=0x3200+ptn*0x44+row*2
@@ -17,24 +19,24 @@ function write_note(ptn,row,nte,tbr,vol,fx)
 	poke(a+1,b1)
 end
 
-function write_bd(ptn,row)
-	ptn_disp[row]=1
-	write_note(ptn,row,0xc,0,7,3)
-end
-
-function write_sd(ptn,row)
-	ptn_disp[row]=2
-	write_note(ptn,row,0x20,6,4,5)
-end
-
-function write_hh(ptn,row)
-	ptn_disp[row]=3
-	write_note(ptn,row,0x3c,6,1,5)
-end
-
-function erase_note(ptn,row)
+function clear_note(ptn,row)
 	ptn_disp[row]=0
-	write_note(ptn,row,0,0,0,0)
+	set_note(ptn,row,0,0,0,0)
+end
+
+function set_bd(ptn,row)
+	ptn_disp[row]=1
+	set_note(ptn,row,0xc,0,7,3)
+end
+
+function set_sd(ptn,row)
+	ptn_disp[row]=2
+	set_note(ptn,row,0x20,6,4,5)
+end
+
+function set_hh(ptn,row)
+	ptn_disp[row]=3
+	set_note(ptn,row,0x3c,6,1,5)
 end
 
 function get_note(ptn,row)
@@ -49,14 +51,14 @@ end
 
 function _update()
 	row=stat(20)
-	if (btnp(4)) erase_note(0,row)
-	if (btnp(0)) write_bd(0,row)
-	if (btnp(1)) write_sd(0,row)
-	if (btnp(2)) write_hh(0,row)
+	if (btnp(4)) clear_note(0,row)
+	if (btnp(0)) set_bd(0,row)
+	if (btnp(1)) set_sd(0,row)
+	if (btnp(2)) set_hh(0,row)
 end
 
 function draw_text()
-	print("2-bar rhythm micro-machine",0,6,1)
+	print("2-bar rhythm micro-machine",0,6,6)
 	print("‹ bass drum",0,88,6)
 	print("‘ snare drum",0,94,6)
 	print("” hi-hat",0,100,6)
@@ -74,12 +76,15 @@ function draw_machine()
 		x=a*4
 		y=48
 		line(x,y+6,x+2,y+6,c)
+		if (row==a) then
+			line(x,y+5,x+2,y+5,c)
+		end
 		if ptn_disp[a]==1 then
-			print("b",x,y,11)
+			print("b",x,y,12)
 		elseif ptn_disp[a]==2 then
-			print("s",x,y,12)
+			print("s",x,y,11)
 		elseif ptn_disp[a]==3 then
-			print(".",x,y,15)
+			print(".",x,y,14)
 		end
 	end
 end
