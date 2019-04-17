@@ -1,20 +1,26 @@
 pico-8 cartridge // http://www.pico-8.com
 version 7
 __lua__
+--brainf... oh, we're pg-13?
+--brainlove interpreter
+--very early prototype
+
 base=8
 size=base*base
 gsize=8
 min_op=0
 max_op=8
 
--- rolling copy
--- source="+.>++.>+++.<<[.[>>>+<<<-]>]"
--- filling copy
--- source="+>++>+++>++++<<<[[>>>>+>+<<<<<-]>>>>>[<<<<<+>>>>>-]<<<<]"
--- fibbonaci mod 16
+--rolling copy
+--source="+.>++.>+++.<<[.[>>>+<<<-]>]"
+--filling copy
+--source="+>++>+++>++++<<<[[>>>>+>+<<<<<-]>>>>>[<<<<<+>>>>>-]<<<<]"
+--fibbonaci mod 16
 source="+.>+.<[[->>+<<]>[-<+>>+<]>.<<[->+<]>]"
--- start empty
--- source=""
+--start empty
+--source=""
+--random numbers
+--source="+[>,.<]-"
 
 prog={}
 matching={}
@@ -25,6 +31,7 @@ memory={}
 pointer=1
 
 output={}
+outlen=0
 
 state=0
 ui=0
@@ -150,8 +157,13 @@ function close()
 end
 
 function out()
-	if #output<size-1 then
+	if #output<size then
 		add(output,memory[pointer])
+		outlen+=1
+	else
+		outlen=outlen%(base*base)
+		output[outlen]=memory[pointer]
+		outlen+=1
 	end
 	pc+=1
 	-- sfx(18,0)
@@ -225,7 +237,7 @@ function draw_output()
 		x,y=wrap(a)
 		spr(output[a]+64,64+x*gsize,64+y*gsize)
 	end
-	x,y=wrap(#output+1)
+	x,y=wrap(outlen+1)
 	spr(64+16,64+x*gsize,64+y*gsize)
 	if #output+2<size then
 		for a=#output+2,size do
@@ -248,6 +260,7 @@ function restart()
 	initialize_memory()
 	match_brackets()
 	output={}
+	outlen=0
 end
 
 function stop()
