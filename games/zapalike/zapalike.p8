@@ -1,6 +1,8 @@
 pico-8 cartridge // http://www.pico-8.com
 version 8
 __lua__
+--zap-alike experimental
+--not even early alpha by adamj
 field={}
 cx=16
 cy=16
