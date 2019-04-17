@@ -1,14 +1,13 @@
 pico-8 cartridge // http://www.pico-8.com
 version 7
 __lua__
+prob_fall=1 --out of 100 on every update
 app_state=1000
-prob_fall=1
 gnd=14
 meteors=32
 level=1
 score=0
-arus=0
-aru_model=15
+aru_max_health=15
 level_up_every=200
 
 perk_names={}
@@ -35,31 +34,9 @@ perk_desc[4]={}
 perk_desc[4][0]="press 'x' in game to"
 perk_desc[4][1]="install aru on a roof"
 
-w={}
 keys={}
+w={}
 d={}
-
--- rig
--- 300: idle
--- 301: move sideways
--- 302: move up/down
--- 303: stable
-
--- buildings
--- 200: none
--- 201: appearing
---      w.bldgs[x].x
---      w.bldgs[x].w
--- 202: standing
--- 203: destroyed
-
--- meteors
--- 100: none
--- 101: falling
---      w.meteors[x].wy
---      w.meteors[x].x
--- 102: crashing
---      w.meteors[x].phase
 
 -------------------------------
 
@@ -86,6 +63,14 @@ function upd_keys()
 end
 
 -------------------------------
+
+-- buildings
+-- 200: none
+-- 201: appearing
+--      w.bldgs[x].x
+--      w.bldgs[x].w
+-- 202: standing
+-- 203: destroyed
 
 function add_bldg(b,x,width,h)
  w.bldgs[b]={}
@@ -199,38 +184,16 @@ function bldg_dmg_from_meteor(b)
    if w.bldgs[b].health<=0 then
     w.bldgs[b].state=203   
     music(8)
+    stop_spraying()
     app_state=1003
    end
   end
  end
 end
 
-function is_rig_aligned(b)
- if b<=0 then
-  return false
- end
- if get_bldg_h(b)*8==d.y then
-  return true
- else
-  return false
- end
-end
-
-function get_dir_to_align(b)
- if is_rig_aligned(b) then
-  return 0
- elseif get_bldg_h(b)*8>d.y then
-  return 1
- else
-  return -1
- end
-end
-
--------------------------------
-
 function bldg_install_aru(b)
  if is_rig_aligned(b) then
-  w.bldgs[b].aru=aru_model
+  w.bldgs[b].aru=aru_max_health
   w.bldgs[b].health=100
   sfx(5,3)
  end
@@ -256,6 +219,14 @@ end
 
 -------------------------------
 
+-- meteors
+-- 100: none
+-- 101: falling
+--      w.meteors[x].wy
+--      w.meteors[x].x
+-- 102: crashing
+--      w.meteors[x].phase
+
 function meteor_wy_to_y(wy)
  if wy<150 then
   return flr(wy/15)
@@ -264,11 +235,19 @@ function meteor_wy_to_y(wy)
  end
 end
 
+function meteor_wy_to_spr(wy)
+ if wy<150 then
+  return 46
+ else
+  return 45
+ end
+end
+
 function draw_meteor(i)
  if w.meteors[i].state==101 then
   y=meteor_wy_to_y(w.meteors[i].wy)
-  pset(w.meteors[i].x,y,7)
-  pset(w.meteors[i].x+1,y,7)
+  s=meteor_wy_to_spr(w.meteors[i].wy)
+  spr(s,w.meteors[i].x,y-7)
  elseif w.meteors[i].state==102 then
   -- pset(w.meteors[i].x,w.meteors[i].sy,4)
   if w.meteors[i].phase<5 then
@@ -311,49 +290,11 @@ end
 
 -------------------------------
 
-function init_map()
- for x=0,15 do
-  for y=0,15 do
-   mset(x,y,mget(x+16,y))
-  end
- end
-end
-
-function initialize_game()
- w.bldgs={}
- w.x_to_bldg={}
- w.rig={}
- w.meteors={}
- w.perks={}
- for a=1,meteors do
-  w.meteors[a]={}
-  w.meteors[a].state=100
- end
- score=0
- level=1
- init_bldgs()
- init_rig()
- init_map()
- ad_units=0
- w.perks[0]=false
- w.perks[1]=false
- w.perks[2]=false
- w.perks[3]=false
- w.perks[4]=false
-end
-
-function update_world()
- count=level+3
- if count>meteors then
-  count=meteors
- end
- for a=1,count do
-  upd_meteor(a)
- end
- update_rig()
-end
-
--------------------------------
+-- rig
+-- 300: idle
+-- 301: move sideways
+-- 302: move up/down
+-- 303: stable
 
 function init_rig()
  d.x=4
@@ -383,6 +324,27 @@ function do_align_perk()
     d.state=302
    end
   end
+ end
+end
+
+function is_rig_aligned(b)
+ if b<=0 then
+  return false
+ end
+ if get_bldg_h(b)*8==d.y then
+  return true
+ else
+  return false
+ end
+end
+
+function get_dir_to_align(b)
+ if is_rig_aligned(b) then
+  return 0
+ elseif get_bldg_h(b)*8>d.y then
+  return 1
+ else
+  return -1
  end
 end
 
@@ -512,10 +474,10 @@ function update_rig()
   elseif is_released(4) then
    stop_spraying()
   elseif is_pressed(5) then
-   if arus>0 then
+   if w.arus>0 then
     b=w.x_to_bldg[flr(d.x/8)]
     bldg_install_aru(b)
-    arus-=1
+    w.arus-=1
    end
   end
  end
@@ -526,6 +488,48 @@ end
 function _init()
  for a=0,5 do keys[a]=0 end
  music(0)
+end
+
+-------------------------------
+
+function init_map()
+ for x=0,15 do
+  for y=0,15 do
+   mset(x,y,mget(x+16,y))
+  end
+ end
+end
+
+function initialize_game()
+ w.bldgs={}
+ w.x_to_bldg={}
+ w.rig={}
+ w.meteors={}
+ w.arus=0
+ for a=1,meteors do
+  w.meteors[a]={}
+  w.meteors[a].state=100
+ end
+ w.perks={}
+ for a=0,4 do
+  w.perks[a]=false
+ end
+ score=0
+ level=1
+ init_bldgs()
+ init_rig()
+ init_map()
+end
+
+function update_world()
+ count=level+3
+ if count>meteors then
+  count=meteors
+ end
+ for a=1,count do
+  upd_meteor(a)
+ end
+ update_rig()
 end
 
 -------------------------------
@@ -558,7 +562,7 @@ function draw_perks()
   end
   spr(idx,4+44+a*8,120)
  end
- if arus>0 then
+ if w.arus>0 then
   spr(116,4+76,120)
  end
 end
@@ -577,7 +581,7 @@ function upd_store_ui()
    if (store_cursor>4) then store_cursor=0 end
   elseif (is_pressed(5)) then
    if store_cursor==4 then
-    arus+=1
+    w.arus+=1
     sfx(1,3)
     store_chosen=1
    else
@@ -636,7 +640,7 @@ function _update()
  -- intro screen
  if app_state==1000 then
   if is_released(5) then
-   music(-1,1500)
+   -- music(-1,1500)
    app_state=1001
   end
  -- initialization
@@ -723,14 +727,14 @@ __gfx__
 466446644644464416111611166116615605000000b33b0000bbbb00000330000000009000c0c090000000000000000000000000000000000000000000000000
 46644664466446641611161116611661565056605555555555555555003333000000009000000090000000000000000000000000000000000000000000000000
 44444444444444441111111111111111500050505555555555555555003333000000009000000090000000000000000000000000000000000000000000000000
-00000000555555555555555500000000000000000000000000000000000330000000009000000000771111111111111111111111000000000000000000000000
+00000000555555555555555500000000000000000000000000000000000330000000009000000000771111111111111111111111700000000000000000000000
 00000000000000005555555500000000000000000000000000000000000330000000009000000000777711111111111110101010000000000000000000000000
-00000000000000005555555500000000000000000000000000000000003333000000009000000000777771111111111111111111000000000000000000000000
-00000000000000005555555500000000000000000000000000000000003333000000009000000000777777111111111110101010000000000000000000000000
-00000000000000005777777500000000000000000003300000011000033333300000009000000000777777711111111111111111000000000000000000000000
+00000000000000005555555500000000000000000000000000000000003333000000009000000000777771111111111111111111700000000000000000000000
+00000000000000005555555500000000000000000000000000000000003333000000009000000000777777111111111110101010070000000000000000000000
+00000000000000005777777500000000000000000003300000011000033333300000009000000000777777711111111111111111700000000000000000000000
 00000000000000005555555500000000000000000030030000300300033333300000009000000000777777711111111110101010000000000000000000000000
-00000000000000005555555500000000000000005555555555555555000330000000009000000000777777771111111111111111000000000000000000000000
-00000000000000005555555500000000000000005555555555555555000330000000009000000000777777771111111110101010000000000000000000000000
+00000000000000005555555500000000000000005555555555555555000330000000009000000000777777771111111111111111990000000000000000000000
+00000000000000005555555500000000000000005555555555555555000330000000009000000000777777771111111110101010aa0000009900000000000000
 00055000000000000000000000000000000000000000000000000000003333000000009000000000777777770101010101010101000000f00000000000000000
 00000000000000000000000000000000000000000000000000000000003333000000009000000000777777771010101000000000000000000000000000000000
 000ff000000000000000000000000000000000000000000000000000033333300000009000000000777777710101010101010101000000000000000000100000
