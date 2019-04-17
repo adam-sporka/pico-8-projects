@@ -1,9 +1,8 @@
 pico-8 cartridge // http://www.pico-8.com
-version 7
+version 9
 __lua__
 --brainf... oh, we're pg-13?
---brainlove interpreter
---very early prototype
+--brainlove engine @adam_sporka
 
 base=8
 size=base*base
@@ -223,7 +222,7 @@ function draw_code()
 end
 
 function draw_memory()
-	rectfill(0,64,63,127,1)
+	rectfill(0,64,63,127,2)
 	for a=1,size do
 		x,y=wrap(a)
 		spr(memory[a]+64,x*gsize,y*gsize+64)
@@ -233,6 +232,7 @@ function draw_memory()
 end
 
 function draw_output()
+	rectfill(64,64,127,127,3)
 	for a=1,#output do
 		x,y=wrap(a)
 		spr(output[a]+64,64+x*gsize,64+y*gsize)
@@ -276,19 +276,21 @@ function clear_all()
 end
 
 menu_choices={}
-menu_choices[0]="back"
+menu_choices[0]="exit this menu"
 menu_choices[1]="restart"
 menu_choices[2]="stop"
 menu_choices[3]="clear all"
 
 function draw_menu()
+	print("function menu",68,68,6)
 	for a=0,#menu_choices do
 		color=5
 		if menu_selection==a then
 			color=7
 		end
-		print(menu_choices[a],68,68+a*8,color)
+		print(menu_choices[a],68,10+68+a*6,color)
 	end
+	print("u/d:choose item",68,122,6)
 end
 
 function exec_menu()
@@ -307,27 +309,80 @@ function wrap_cell_edit(i)
 	return x,y
 end
 
+function ctr(s,y,c)
+	x=64-#s*2
+	print(s,x,y,c)
+	return x
+end
+
+function ctru(s,y,c)
+ x=ctr(s,y,c)
+ for a=1,#s do
+  print("_",x+(a-1)*4,y+2)
+ end
+end
+
+ic=0
+function draw_intro()
+	ic+=0.25
+	ctr("brainfffuuu",24,7)
+	ctr("the pico8 brainf  k interpreter",40,6)
+	ctr("                **             ",40,8+ic%8)
+	ctr("by @adam_sporka",48,6)
+	ctr("arrows move the cursor",64,7)
+	ctr("hold z to access edit menu",72,7)
+	ctr("hold x to access function menu",80,7)
+	ctr("press z or x to continue",96,6)
+end
+
+function box(s,x,y)
+	l=#s
+	x=x-2*l-1
+	rectfill(x,y,x+l*4,y+6,1)
+	print(s,x+1,y+1,7)
+end
+
+function draw_overlay()
+	box(" edit your ",64,4)
+	box(" code here ",64,10)
+	box(" this shows ",32,86)
+	box(" the memory ",32,92)
+	box(" this shows ",96,86)
+	box(" the output ",96,92)
+	box("use arrow keys and z/x",64,116)
+	box("now press z or x to continue",64,122)
+end
+
 function draw_cell_edit()
-	print("up/dn:",68,68,6)
+	print("edit menu",68,68,6)
 	for a=min_op,max_op do
 		x,y=wrap_cell_edit(a)
 		spr(16+a,68+x*8,68+8+y*8)
 	end
 	x,y=wrap_cell_edit(prog[curs])
 	spr(33,68+x*8,68+8+y*8)
+	print("u/d:choose op.",68,116,6)
+	print("l:del r:ins",68,122,6)
 end
 
 function _draw()
-	rectfill(0,0,127,127,0)
-	draw_code()
-	draw_memory()
-	draw_cursor()
-	if ui==0 then
-		draw_output()
-	elseif ui==1 then
-		draw_menu()
-	elseif ui==2 then
-		draw_cell_edit()
+	cls()
+	if ui==3 then
+		draw_intro()
+	else
+		draw_code()
+		draw_memory()
+		draw_cursor()
+		if ui==0 or ui==4 then
+			draw_output()
+		elseif ui==1 then
+			draw_menu()
+		elseif ui==2 then
+			draw_cell_edit()
+		end
+		if ui==4 then
+			draw_overlay()
+		end
 	end
 end
 
@@ -335,7 +390,7 @@ function del_code()
 	for a=curs,size*2 do
 		prog[a]=prog[a+1]
 	end
-	prog[size]=0
+	prog[size*2]=0
 	if pc>curs then pc-=1 end
 end
 
@@ -349,6 +404,18 @@ end
 
 function _update()
 	upd_keys()
+	if ui==3 then
+		if is_released(4) or is_released(5) then
+			ui=4
+		end
+		return
+	end
+	if ui==4 then
+		if is_released(4) or is_released(5) then
+			ui=0
+		end
+		return
+	end
 	if ui==1 then
 		if is_pressed(2) then
 			menu_selection-=1
@@ -386,7 +453,7 @@ function _update()
 			elseif btnp(3) then curs+=base*2
 			end
 			if curs<1 then curs=1 end
-			if curs>size then curs=size end
+			if curs>size*2 then curs=size*2 end
 		end
 		if state==1 then
 			exec_step()
@@ -395,6 +462,7 @@ function _update()
 end
 
 function _init()
+	ui=3
 	init_keys()
 	initialize_memory()
 	fetch_prog()
