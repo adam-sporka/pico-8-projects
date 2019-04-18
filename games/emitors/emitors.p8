@@ -15,7 +15,8 @@ top=16
 bottom=112
 default_y=64
 initial_energy=100
-max_emitors=10
+max_emitors=8
+granularity=6
 --------
 screen=0
 frame=0
@@ -133,7 +134,7 @@ function draw_score()
  	s=6
  	if #emitors<=a then s=3
  	end
- 	spr(s,24+(a)*8,2)
+ 	spr(s,64+a*8-max_emitors*4,2)
  end
  rectfill(12,11,12+102,13,6)
  line(13,12,13+100,12,0)
@@ -148,7 +149,7 @@ function launch()
 			return
 		end
 	end
-	if #emitors>=10 then
+	if #emitors>=max_emitors then
 		return
 	end
 	add_emitor(c-l,c+l,y)
@@ -165,8 +166,8 @@ function draw_title()
 	ctr("horizontal bars emit and")
 	ctr("absorb particles.")
 	last_y=60
-	ctr("+1 point = 1 particle caught")
-	ctr("-1 energy = top or bottom hit")
+	ctr("1 particle caught = +1 score ")
+	ctr("top or bottom hit = -1 energy")
 	last_y=78
 	ctr("controls:")
 	ctr("⬆️⬇️ move cursor ",nil,nil,2)
@@ -216,9 +217,9 @@ function update_game()
 	bottom_hit-=1
 	for e in all(emitors) do e:update() end
 	for s in all(shots) do s:update() end
-	if btn(2) then y-=2 end
-	if btn(3) then y+=2 end 
-	y=clamp(y,top+2,bottom-2)
+	if btnp(2) then y-=granularity end
+	if btnp(3) then y+=granularity end 
+	y=clamp(y,top+granularity,bottom-granularity)
 	if btnp(4) then launch() end
 end
 --------
