@@ -1,5 +1,5 @@
 pico-8 cartridge // http://www.pico-8.com
-version 16
+version 18
 __lua__
 --brainf... oh, we're pg-13?
 --brainlove engine @adam_sporka
@@ -269,10 +269,13 @@ end
 
 function clear_all()
 	initialize_memory()
+	pc=1
 	curs=1
 	pointer=1
 	clear_prog()
 	output={}
+	outlen=0
+	state=0
 end
 
 function toggle_sound()
@@ -346,7 +349,7 @@ function draw_intro()
 	ctr("arrows move the cursor",72,7)
 	ctr("hold z to access edit menu",80,7)
 	ctr("hold x to access function menu",88,7)
-	ctr("enter menu to load some examples",96,7)
+	ctr("hit enter to load some examples",96,7)
 	ctr("press z or x to continue",112,6)
 end
 
