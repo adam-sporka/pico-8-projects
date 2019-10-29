@@ -11,7 +11,7 @@ Games:
  * Emitors (2019)
 
 Other contents:
- * Tweetcarts
+ * Tweetcarts (see them live on twitter: https://twitter.com/search?q=tweetcart%20adam_sporka&f=live)
  * Brainf__k programming language
  * Music generators and sequencers
 
