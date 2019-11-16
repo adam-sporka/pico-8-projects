@@ -2,16 +2,16 @@ pico-8 cartridge // http://www.pico-8.com
 version 18
 __lua__
 t=0
-u=2
 ::_::
-t=t+u
-if (t>124) u=-2
-if (t<2) u=2
-for a=0,3 do flip() end
+t=t+(u or 0)
 cls()
 for a=0,126,1 do
-line(t,1,a,127,1+11*(a%2))
+line(t,1,a,127,10+a%2)
 end
+p=1
+if t>124 then u=-2 p=30 end
+if t<2 then u=2 p=30 end
+for a=1,p do flip() end
 goto _
 
 __gfx__
