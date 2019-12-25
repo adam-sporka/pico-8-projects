@@ -209,6 +209,7 @@ end
 mx=0
 my=0
 mb=false
+
 function handle_ipts()
 	ipt=find_ipt(mx,my)
 	if ipt != nil then
@@ -222,8 +223,10 @@ function on_user_clicked()
 end
 
 function _update()
-	mx=stat(32)
-	my=stat(33)
+ if peek(0x5f2d)>0 then
+		mx=stat(32)
+		my=stat(33)
+	end
 	if stat(34)>0 then
 		if not mb then
 			on_user_clicked()
@@ -232,8 +235,15 @@ function _update()
 	else
 		mb=false
 	end
+	if (btn(0)) mx-=1
+	if (btn(1)) mx+=1
+	if (btn(2)) my-=1
+	if (btn(3)) my+=1
 	if btnp(4) then
 		on_user_clicked()
+	end
+	if btnp(5) then
+		poke(0x5f2d,1-peek(0x5f2d))
 	end
 end
 -->8
@@ -243,7 +253,6 @@ function initialize()
 end
 
 function _init()
-	poke(0x5f2d,1)
 	initialize()
 	collect_ipts()
 end
