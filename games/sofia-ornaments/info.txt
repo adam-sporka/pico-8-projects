@@ -1,0 +1,9 @@
+sofia-ornaments-line.p8 ...     initial pattern is a linear segment
+sofia-ornaments-square.p8 ...   initial pattern is 4 segments
+sofia-ornaments-released.p8 ... ditto, as released
+
+Release on Lexaloffle BBS:
+https://lexaloffle.com/bbs/?tid=36913
+
+Announcement tweet:
+https://twitter.com/adam_sporka/status/1231635803052429312
