@@ -4,6 +4,8 @@ __lua__
 --sofia ornaments 1.1
 --@adam_sporka
 
+show_status_bar=true
+
 function new_seg(x1,y1,x2,y2)
 	s={}
 	s.x1=x1
@@ -88,15 +90,21 @@ function drawstring(string)
 	x1,y1,x2,y2=getbbox(segs)
 	x=x1+(x2-x1)/2
 	y=y1+(y2-y1)/2
-	camera(x-64,y-60)
+	if show_status_bar then
+		camera(x-64,y-60)
+	else
+		camera(x-64,y-64)
+	end
 	drawsegs(segs,clr)
 	camera(0,0)
-	line(0,120,127,120,5)
-	rectfill(0,121,127,127,0)
-	print("use 🅾️⬆️⬇️➡️❎",0,122,6)
-	if #string>0 then
-		rule="rule \""..string.."\""
-		print(rule,128-#rule*4,122,6)
+	if show_status_bar then
+		line(0,120,127,120,5)
+		rectfill(0,121,127,127,0)
+		print("use 🅾️⬆️⬇️➡️❎",0,122,6)
+		if #string>0 then
+			rule="rule \""..string.."\""
+			print(rule,128-#rule*4,122,6)
+		end
 	end
 end
 
@@ -139,6 +147,16 @@ function _update()
 	update_ui()
 end
 
+menuitem(1,"hide status bar",
+ function()
+ 	show_status_bar=false
+ 	drawstring(str)
+ end) 
+menuitem(2,"show status bar",
+ function()
+ 	show_status_bar=true
+ 	drawstring(str)
+ end) 
 __gfx__
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
