@@ -1,7 +1,7 @@
 pico-8 cartridge // http://www.pico-8.com
 version 18
 __lua__
---sofia ornaments
+--sofia ornaments 1.1
 --@adam_sporka
 
 function new_seg(x1,y1,x2,y2)
@@ -111,30 +111,24 @@ function update_ui()
 	if btnp(5) then
 	 a="1"
 		if rnd()<0.5 then a="2" end
-		if #str==8 then str=sub(str,2) end
+		if #str>=8 then str=sub(str,#str-6) end
 		str=str..a
 		drawstring(str)
 	end
-	if btnp(0) then
-		if #str<13 then
-			str=str.."0"
-			drawstring(str)
-		end
-	end
 	if btnp(1) then
-		if #str<10 then
+		if #str<8 then
 			str=str.."0"
 			drawstring(str)
 		end
 	end
 	if btnp(2) then
-		if #str<10 then
+		if #str<8 then
 			str=str.."1"
 			drawstring(str)
 		end
 	end
 	if btnp(3) then
-		if #str<10 then
+		if #str<8 then
 			str=str.."2"
 			drawstring(str)
 		end
