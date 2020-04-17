@@ -1,4 +1,4 @@
-AJ's PICO-8 PROJECTS
+# AJ's PICO-8 PROJECTS
 
 This repository is the collection of my .p8 files.
 
