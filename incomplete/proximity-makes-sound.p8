@@ -40,7 +40,7 @@ function new_link(i1,i2)
 	add(links,l)
 end
 
-function _init()
+function default_scene()
 	a=new_disc(64,32,32,0,1)
 	b=new_disc(64,64,8,0,2)
 	c=new_disc(64,96,48,0,.5)
@@ -48,6 +48,33 @@ function _init()
 	new_link(a,b)
  new_link(b,c)
  new_link(a,d)
+end
+
+function ragtime()
+	a=new_disc(112,112, 16,0,0.5)
+	b=new_disc( 48, 48,  8,0,1.0)
+	c=new_disc( 16, 80,  8,0,1.5)
+	d=new_disc( 48, 48, 24,0,2.0)
+	new_link(a,b)
+ new_link(b,c)
+ new_link(a,d)
+end
+
+function random_scene()
+	for i=1,4 do
+		x=flr(rnd()*4)*32+16
+		y=flr(rnd()*4)*32+16
+		r=flr(rnd()*4)*8
+		new_disc(x,y,r,0,i/2)
+		if i>1 then
+			new_link(i-1,i)
+		end
+	end
+end
+
+function _init()
+	--random_scene()
+	ragtime()
 end
 
 function get_disc_pos(i)
