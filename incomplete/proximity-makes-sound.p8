@@ -71,6 +71,21 @@ function preset()
 	new_disc(80,16,16,798,2)
 end
 
+function x()
+	for i=1,5 do
+		new_disc(64,i*20,i*2,0,i*.5)
+	end
+end
+
+function y()
+	new_disc(48,64,0,0,0)
+	new_disc(66,64,6,0,1)
+	new_disc(66,46,0,0,0)
+	new_disc(84,64,6,0,1)
+	new_disc(102,44,0,0,0)
+	new_disc(120,66,6,0,1)
+end
+
 function random_scene()
 	for i=1,4 do
 		x=flr(rnd()*4)*32+16
@@ -87,7 +102,8 @@ function reinitialize()
 end
 
 function _init()
-	ragtime()
+	--ragtime()
+ y()
 end
 
 function get_disc_pos(i)
@@ -138,7 +154,7 @@ function dists()
 		x2,y2=get_point_pos_next(links[i].i2)
 		d1=abs(x2-x1)
 		d2=abs(y2-y1)
-		d=sqrt(d1*d1+d2*d2)
+		d=sqrt(d1*d1+d2*d2)+0.5
 		links[i].d=d
 		f=links[i].f
 		e=links[i].e
