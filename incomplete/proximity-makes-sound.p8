@@ -23,15 +23,6 @@ function beep(note)
 	last_beep_channel=channel
 end
 
-discs={}
-function new_disc(x,y,r,a,w)
-	d={}
-	d.x,d.y,d.r,d.a,d.w=x,y,r,a,w
-	d.color=(#discs)%8+8
-	add(discs,d)
-	return #discs
-end
-
 links={}
 function new_link(i1,i2)
 	l={}
@@ -40,24 +31,44 @@ function new_link(i1,i2)
 	add(links,l)
 end
 
+discs={}
+function new_disc(x,y,r,a,w)
+	d={}
+	d.x,d.y,d.r,d.a,d.w=x,y,r,a,w
+	d.color=(#discs)%8+8
+	add(discs,d)
+	if #discs>1 then
+		new_link(#discs-1,#discs)
+	end
+	return #discs
+end
+
 function default_scene()
-	a=new_disc(64,32,32,0,1)
-	b=new_disc(64,64,8,0,2)
-	c=new_disc(64,96,48,0,.5)
-	d=new_disc(64,32,64,0,.25)
-	new_link(a,b)
- new_link(b,c)
- new_link(a,d)
+	new_disc(64,32,32,0,1)
+	new_disc(64,64,8,0,2)
+	new_disc(64,96,48,0,.5)
+	new_disc(64,32,64,0,.25)
 end
 
 function ragtime()
-	a=new_disc(112,112, 16,0,0.5)
-	b=new_disc( 48, 48,  8,0,1.0)
-	c=new_disc( 16, 80,  8,0,1.5)
-	d=new_disc( 48, 48, 24,0,2.0)
-	new_link(a,b)
- new_link(b,c)
- new_link(c,d)
+	new_disc(112,112, 16,0,0.5)
+	new_disc( 48, 48,  8,0,1.0)
+	new_disc( 16, 80,  8,0,1.5)
+	new_disc( 48, 48, 24,0,2.0)
+end
+
+function test()
+	new_disc(112,48,24,11.5,0.5)
+	new_disc(48,16,16,23,1)
+	new_disc(48,48,24,34.5,1.5)
+	new_disc(16,48,8,46,2)
+end
+
+function preset()
+	new_disc(80,48,0,199.5,0.5)
+	new_disc(112,80,0,399,1)
+	new_disc(16,16,24,598.5,1.5)
+	new_disc(80,16,16,798,2)
 end
 
 function random_scene()
@@ -66,22 +77,17 @@ function random_scene()
 		y=flr(rnd()*4)*32+16
 		r=flr(rnd()*4)*8
 		new_disc(x,y,r,0,i/2)
-		if i>1 then
-			new_link(i-1,i)
-		end
 	end
 end
 
 function reinitialize()
 	discs={}
 	links={}
-	--default_scene()
-	--ragtime()
 	random_scene()
 end
 
 function _init()
-	reinitialize()
+	ragtime()
 end
 
 function get_disc_pos(i)
@@ -150,11 +156,12 @@ function dump_config_to_clip()
 	r=""
 	for i=1,#discs do
 		d=discs[i]
+		r=r.."\tnew_disc("
 		r=r..d.x..","
 		r=r..d.y..","
 		r=r..d.r..","
 		r=r..d.a..","
-		r=r..d.w.."\n"
+		r=r..d.w..")\n"
 	end
 	printh(r,"@clip")
 end
