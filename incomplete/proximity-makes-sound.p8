@@ -18,7 +18,7 @@ function beep(note)
 	poke(al,bl)
 	poke(ah,bh)
 	a=0x3200+68*channel+65
-	poke(a,15)
+	poke(a,24)
 	sfx(channel)
 	last_beep_channel=channel
 end
@@ -36,7 +36,7 @@ links={}
 function new_link(i1,i2)
 	l={}
 	l.i1,l.i2=i1,i2
-	l.f,l.e,l.d,l.t=0,0,0,false
+	l.f,l.e,l.d,l.t=0,0,0,0
 	add(links,l)
 end
 
@@ -57,7 +57,7 @@ function ragtime()
 	d=new_disc( 48, 48, 24,0,2.0)
 	new_link(a,b)
  new_link(b,c)
- new_link(a,d)
+ new_link(c,d)
 end
 
 function random_scene()
@@ -72,9 +72,16 @@ function random_scene()
 	end
 end
 
+function reinitialize()
+	discs={}
+	links={}
+	--default_scene()
+	--ragtime()
+	random_scene()
+end
+
 function _init()
-	--random_scene()
-	ragtime()
+	reinitialize()
 end
 
 function get_disc_pos(i)
@@ -139,10 +146,56 @@ function dists()
 	end
 end
 
+function dump_config_to_clip()
+	r=""
+	for i=1,#discs do
+		d=discs[i]
+		r=r..d.x..","
+		r=r..d.y..","
+		r=r..d.r..","
+		r=r..d.a..","
+		r=r..d.w.."\n"
+	end
+	printh(r,"@clip")
+end
+
 function _update()
 	move()
 	dists()
+	if btnp(4) then
+		dump_config_to_clip()
+	end
+	if btnp(5) then
+		reinitialize()
+	end
 end
+
+-- some fun configurations
+
+-- 112,112,24,27.5,0.5
+-- 16,16,0,55,1
+-- 80,48,0,82.5,1.5
+-- 48,112,16,110,2
+
+-- 80,80,24,77.5,0.5
+-- 112,16,8,155,1
+-- 48,48,0,232.5,1.5
+-- 112,80,24,310,2
+
+-- 48,80,0,125,0.5
+-- 112,80,0,250,1
+-- 48,48,24,375,1.5
+-- 48,112,8,500,2
+
+-- 112,16,8,116.5,0.5
+-- 16,48,24,233,1
+-- 80,16,0,349.5,1.5
+-- 80,112,24,466,2
+
+-- 112,48,16,107,0.5
+-- 48,16,16,214,1
+-- 48,80,16,321,1.5
+-- 48,16,16,428,2
 
 __gfx__
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
