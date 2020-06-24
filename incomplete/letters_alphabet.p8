@@ -126,7 +126,11 @@ end
 
 function set_target_ltr(col,row,c)
 	local i=0
-	for a in all(ltr[ord(c)]) do
+	local l=ltr[ord(c)]
+	if l==nil then
+		l=space
+	end
+	for a in all(l) do
 		i+=1
 		display[row][col][i].tx1=a.x1
 		display[row][col][i].ty1=a.y1
@@ -149,15 +153,19 @@ function _update()
 	for row=1,8 do
 		for col=1,8 do
 			update_display_cell(col,row)
-			if (i%64==t%64) then
-				if btn(4) then set_target_ltr(col,row,chr(32))
-				else set_target_ltr(col,row,chr(97+(t%26)))
+			if btn(4) then
+				set_target_ltr(col,row,chr(96))
+			elseif btnp(5) then
+				set_target_ltr(col,row,chr(96+flr(rnd(26))))
+			else
+				if (i%64==t%64) then
+					set_target_ltr(col,row,chr(97+(t%26)))
 				end
 			end
 			i+=1
 		end
 	end
-	t+=1
+	t+=0.5
 end
 
 t=0
