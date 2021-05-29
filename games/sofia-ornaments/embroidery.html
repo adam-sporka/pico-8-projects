@@ -1,0 +1,185 @@
+<html>
+
+<head>
+    <style>
+        body {
+            text-align: center;
+            background-color: #dddddd;
+        }
+
+        #the-canvas {
+            border: 1px solid black;
+            background-color: #ffffff;
+            margin-left: auto;
+            margin-right: auto;
+            margin-top: 20px;
+            margin-bottom: 20px;
+        }
+
+        #rule-string {
+            text-align: center;
+        }
+
+        h1 {
+            font-family: Consolas, Arial;
+            margin-top: 20px;
+            margin-bottom: 20px;
+        }
+    </style>
+
+    <script language='JavaScript'>
+        function get_canvas() {
+            return document.getElementById("the-canvas");
+        }
+
+        function get_canvas_context() {
+            return get_canvas().getContext("2d");
+        }
+
+        function create_segment(x1, y1, x2, y2) {
+            s = {};
+            s.x1 = x1;
+            s.y1 = y1;
+            s.x2 = x2;
+            s.y2 = y2;
+            return s;
+        }
+
+        function split_segment(seg, mode) {
+            var dx = seg.x2 - seg.x1;
+            var dy = seg.y2 - seg.y1;
+            var mx = seg.x1 + dx / 2;
+            var my = seg.y1 + dy / 2;
+            if (mode == 1) {
+                mx += dy / 2;
+                my += -dx / 2;
+            }
+            else if (mode == 2) {
+                mx += -dy / 2;
+                my += dx / 2;
+            }
+            return [create_segment(seg.x1, seg.y1, mx, my), create_segment(mx, my, seg.x2, seg.y2)];
+        }
+
+        function subdiv(segs, mode) {
+            new_segs = Array();
+            for (var s in segs) {
+                s = split_segment(segs[s], mode);
+                new_segs.push(s[0]);
+                new_segs.push(s[1]);
+            }
+            return new_segs;
+        }
+
+        function calculate_image(formula) {
+            segs = Array();
+            segs.push(create_segment(-1, -1, 1, -1));
+            segs.push(create_segment(1, -1, 1, 1));
+            segs.push(create_segment(1, 1, -1, 1));
+            segs.push(create_segment(-1, 1, -1, -1));
+            for (var a = 0; a < formula.length && a < 8; a++) {
+                mode = 0;
+                if (formula[a] == "1") mode = 1;
+                else if (formula[a] == "2") mode = 2;
+                segs = subdiv(segs, mode);
+            }
+            return segs;
+        }
+
+        function draw_segments(segs) {
+            var ctx = get_canvas_context();
+            var first = true;
+            for (var s in segs) {
+                var x1 = Math.floor(segs[s].x1 * 128 + 384);
+                var y1 = Math.floor(segs[s].y1 * 128 + 384);
+                var x2 = Math.floor(segs[s].x2 * 128 + 384);
+                var y2 = Math.floor(segs[s].y2 * 128 + 384);
+
+                if (first) ctx.moveTo(x1, y1);
+                ctx.lineTo(x2, y2);
+                first = false;
+
+                ctx.strokeStyle = "black";
+                ctx.lineWidth = 1;
+                ctx.stroke();
+            }
+        }
+
+        function draw_by_string(formula) {
+            var ctx = get_canvas_context();
+            ctx.beginPath();
+            ctx.fillStyle = "white";
+            ctx.fillRect(0, 0, 768, 768);
+            ctx.fill();
+            segs = calculate_image(formula);
+            draw_segments(segs);
+        }
+
+        function render() {
+            draw_by_string(document.getElementById("rule-string").value);
+        }
+
+        function set_formula(formula) {
+            document.getElementById("rule-string").value = formula;
+            render();
+        }
+
+        function download() {
+            var MIME_TYPE = "image/png";
+            var imgURL = get_canvas().toDataURL(MIME_TYPE);
+            var dlLink = document.createElement('a');
+            dlLink.download = document.getElementById("rule-string").value + ".png";
+            dlLink.href = imgURL;
+            dlLink.dataset.downloadurl = [MIME_TYPE, dlLink.download, dlLink.href].join(':');
+            document.body.appendChild(dlLink);
+            dlLink.click();
+            document.body.removeChild(dlLink);
+        }
+        
+        function random() {
+            var length = Math.floor(Math.random(6)) + 2;
+            var e = document.getElementById("rule-string");
+            for (var a = 0; a < length; a++)
+            {
+                
+            }
+            draw_by_string(document.getElementById("rule-string").value);
+        }
+
+    </script>
+
+</head>
+
+<body onload='JavaScript:render()'>
+
+
+    <h1>L-system Bulgarian Embroidery</h1>
+
+    <canvas id="the-canvas" width="768" height="768"></canvas>
+
+    <p>
+        <form>
+            <a id='' href='JavaScript:download()'>[Download current picture as .png]</a>&nbsp;&nbsp;&nbsp;
+            <a id='' href='JavaScript:random()'>[Randomize]</a>&nbsp;&nbsp;&nbsp;
+            Edit formula: <input onkeyup='javascript:render()' id='rule-string' value='12122122' />
+        </form>
+    </p>
+
+    <p>
+        Try examples:
+        <a href='javascript:set_formula("0")'>Square</a> –
+        <a href='javascript:set_formula("1")'>Rotated square</a> –
+        <a href='javascript:set_formula("2")'>Thin cross</a> –
+        <a href='javascript:set_formula("200001")'>Thick cross</a> –
+        <a href='javascript:set_formula("212121")'>8-by-8</a> –
+        <a href='javascript:set_formula("12122122")'>Default picture</a> –
+        <a href='javascript:set_formula("11111111")'>Outwards</a> –
+        <a href='javascript:set_formula("22222222")'>Inwards</a>
+    </p>
+
+    <p>
+        <a href='https://adam.sporka.eu'>(c) 2020 Adam Sporka</a>
+    </p>
+
+</html>
+
