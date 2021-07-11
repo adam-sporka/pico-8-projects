@@ -1,15 +1,37 @@
 pico-8 cartridge // http://www.pico-8.com
-version 29
+version 32
 __lua__
--- this tool converts the current pico-8's music track into a reaper project file.
--- open the output in reaper, add your favorite vst, and hear the entire song.
+-- pico-8-to-reaper converter
+-- prototype
+
+-- (c) 2021 adam sporka
+-- use at your own risk!
+
+-- this tool converts the
+-- current pico-8's music
+-- track into a reaper
+-- project file (rename the
+-- output to have the .rpp ext)
+
+-- to run: press esc and run
+-- the program. the music
+-- that is currently in the
+-- pico-8 ide will be converted
+
+-- open the output in reaper,
+-- add your favorite vst,
+-- and hear the entire song.
 
 -- terminology:
 -- "note" = a cells in pico-8's tracker
 -- "tone" = a continuous sound which may comprise of multiple consecutive notes
 -- "event" = a midi event
 
-fn="abc.rpp"
+-- caveats:
+-- * not all effects supported
+-- * tempo is set to 120 bpm
+
+fn="output.rpp"
 id=1000
 iid=1
 
@@ -73,7 +95,9 @@ function get_note(sfxn,row)
 	return n
 end
 
--- assuming 120 BPM, 32 sixteenth notes per pattern
+-- assuming 120 BPM and
+-- 32 sixteenth notes
+-- per pattern
 function get_pos_t(order)
 	return 4 * order
 end
@@ -98,9 +122,9 @@ function rpr_with_id(string, id_forced)
 end
 
 function vis_ptn(track, order, color)
-	local x = order * 4
+	local x = order * 2
 	local y = 20 + track * 4
-	rectfill(x, y, x+2, y+2, color)
+	rectfill(x, y, x, y+2, color)
 end
 
 function same_note(n1,n2)
