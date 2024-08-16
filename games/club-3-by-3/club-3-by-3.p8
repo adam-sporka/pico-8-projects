@@ -1,8 +1,21 @@
 pico-8 cartridge // http://www.pico-8.com
 version 36
 __lua__
+-- CARD FUNCTIONS
 
+-- suits
+-- 0 = undef
+-- 1 = hearts
+-- 2 = diamonds
+-- 3 = clubs
+-- 4 = spades
 
+-- values
+-- 1 = A
+-- 2...10 = 2...10
+-- 11 = J
+-- 12 = Q
+-- 13 = K
 
 lb={"a","2","3","4","5","6","7","8","9","10","j","q","k","jkr"}
 sx,sy=32,32
@@ -69,15 +82,71 @@ end
 end
 
 
+global=_ENV
+
+class=setmetatable({
+new=function(self,tbl)
+local tbl=tbl or {}
+setmetatable(tbl,{__index=self})
+return tbl
+end
+},{__index=_ENV})
+
+-- DCard is a card in the deck
+-- This is the only place that persists the state of a card
+
+-- State
+-- 0 = not yet dealt
+-- 1 = dealt
+-- 2 = discarded
+dcard=class:new({
+ncard=5,
+state=0
+})
+
+-- Deck is the list of cards
+deck=class:new({
+cards={},
+new=function(self,tbl)
+local tbl=class.new(self,tbl)
+for a=1,60 do
+local card=dcard:new({ncard=a})
+add(self.cards,card)
+end
+for i=#self.cards, 2, -1 do
+local j = flr(rnd(i))
+self.cards[i], self.cards[j] = self.cards[j], self.cards[i]
+end
+return tbl
+end,
+})
+
+deck.draw=function(_ENV)
+rectfill(0,120,127,123,1)
+local x=0
+for card in all(cards) do
+x+=2
+line(x,121,x,122,get_color(suit(card.ncard)))
+end
+print(#cards,0,0,1)
+print(test,0,11,1)
+end
+
 t=0
 
+function _init()
+game_deck=deck.new()
+end
+
 function _draw()
-cls(t)
-draw_card(flr(t),16,16)
+cls()
+game_deck:draw()
 end
 
 function _update()
-t=t+0.125
+if btnp(4) then
+game_deck2=deck.new();
+end
 end
 
 __gfx__
@@ -96,6 +165,13 @@ __gfx__
 00000000cc000dd0000d0000c000c0c0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000c00000d000ddd0000c00cc00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000ddddd0000c0ccc0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+
+
+
+
+
+
+
 
 
 
