@@ -101,13 +101,14 @@ dcard=class:new({
 
 deck=class:new({
 	cards={},
-	test=12,
+	orig_count=0,
 	new=function(self,tbl)
 		tbl=class.new(self,tbl)
 		for a=1,60 do
 			card=dcard:new({ncard=a})
 			add(self.cards,card)
 		end
+		self.orig_count=#self.cards
 		for i=#self.cards, 2, -1 do
 			local j = flr(rnd(i))
 			self.cards[i], self.cards[j] = self.cards[j], self.cards[i]
@@ -121,8 +122,8 @@ deck=class:new({
 			x+=2
 			line(x,121,x,122,get_color(suit(card.ncard)))
 		end
-		print(#cards,0,0,1)
-		print(test,0,11,1)
+		print("current # "..#cards,0,0,7)
+		print("orig # " .. orig_count,0,6,7)
 	end
 })
 
@@ -131,6 +132,17 @@ board=class:new({
 	new=function(self,tbl)
 		tbl=class.new(self,tbl)
 		for a=1,9 do
+			add(self.slots,scard:new({
+				x=rnd(128),
+				y=rnd(128),
+				ncard=game_deck.cards[a].ncard
+			}))
+		end
+		return tbl
+	end,
+	draw=function(_ENV)
+		for slot in all(slots) do
+			slot:draw()
 		end
 	end
 })
@@ -149,10 +161,11 @@ function _draw()
 	draw_playfield()
 	t += 1
 	game_deck:draw()
+	game_board:draw()
 end
 
-function _init()
-end
+game_deck=deck:new()
+game_board=board:new()
 
 -- draw functions
 
@@ -225,8 +238,6 @@ function get_meld(i)
 -- nothing
 	return "nothing",0,0
 end
-
-game_deck=deck:new()
 
 __gfx__
 00000000088088000008000000555000000500000444440000000000000000000000000000000000000000000000000000000000000000000000000000000000
